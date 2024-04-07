@@ -1,5 +1,7 @@
+// Import React library
 import React from "react";
 
+// Define interface for product props
 interface ProductProps {
   product: {
     photo: string;
@@ -10,8 +12,12 @@ interface ProductProps {
   };
 }
 
+// Define Product component
 const Product: React.FC<ProductProps> = ({ product }) => {
+  // Destructure product object
   const { photo, productName, categoryName, brandName, cost } = product;
+
+  // Render product details
   return (
     <div className="max-w-sm rounded overflow-hidden">
       <img className="w-full h-64 object-cover" src={photo} alt={productName} />
@@ -25,4 +31,5 @@ const Product: React.FC<ProductProps> = ({ product }) => {
   );
 };
 
+// Export Product component
 export default Product;
