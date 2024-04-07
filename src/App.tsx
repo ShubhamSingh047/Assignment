@@ -1,7 +1,7 @@
-import { useEffect, useReducer, useState } from "react";
-import "./App.css";
+import { useEffect, useReducer } from "react";
 import Loading from "./component/Loading/Loading";
 import ErrorComponent from "./component/Error/ErrorComponent";
+import ProductionListing from "./component/ProductListing/ProductionListing";
 
 let intailState = {
   valid: false,
@@ -78,16 +78,13 @@ function App() {
             body: JSON.stringify(state.user),
           }
         );
-        console.log(response);
         if (response.ok) {
           const data = await response.json();
-          console.log(data, "data");
           if (data.success) {
             dispatch({
               type: "success",
             });
-
-            document.cookie = `token=${data.token}; path=/`;
+            document.cookie = `token=${data.token}`;
           } else {
             if (loading) {
               dispatch({
@@ -124,44 +121,55 @@ function App() {
   };
 
   return (
-    <>
+    <div className="bg-pink-100">
       {loading && !error ? <Loading /> : null}
       {error && !loading ? (
         <ErrorComponent />
       ) : (
         <>
           {valid ? (
-            <div>Product Listing</div>
+            <div className="w-full mx-auto px-4 py-8">
+              <ProductionListing />
+            </div>
           ) : (
-            <>
-              <input
-                type="email"
-                placeholder="user name"
-                value={username}
-                onChange={(e) =>
-                  dispatch({
-                    type: "user",
-                    payload: { username: e.target.value },
-                  })
-                }
-              />
-              <input
-                type="password"
-                placeholder="password"
-                value={password}
-                onChange={(e) =>
-                  dispatch({
-                    type: "password",
-                    payload: { password: e.target.value },
-                  })
-                }
-              />
-              <button onClick={handleLogin}>login</button>
-            </>
+            <div className="flex justify-center items-center h-screen">
+              <div className="bg-gray-100 p-6 rounded-lg shadow-md">
+                <input
+                  className="block w-full mb-4 p-2 rounded-md border border-gray-300"
+                  type="email"
+                  placeholder="Username"
+                  value={username}
+                  onChange={(e) =>
+                    dispatch({
+                      type: "user",
+                      payload: { username: e.target.value },
+                    })
+                  }
+                />
+                <input
+                  className="block w-full mb-4 p-2 rounded-md border border-gray-300"
+                  type="password"
+                  placeholder="Password"
+                  value={password}
+                  onChange={(e) =>
+                    dispatch({
+                      type: "password",
+                      payload: { password: e.target.value },
+                    })
+                  }
+                />
+                <button
+                  className="w-full bg-blue-500 text-white font-bold py-2 rounded-md hover:bg-blue-600"
+                  onClick={handleLogin}
+                >
+                  Login
+                </button>
+              </div>
+            </div>
           )}
         </>
       )}
-    </>
+    </div>
   );
 }
 
