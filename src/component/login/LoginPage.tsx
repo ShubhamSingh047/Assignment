@@ -62,7 +62,7 @@ const LoginPage: React.FC = () => {
           payload: {
             errorState: true,
             loading: false,
-            errorMessage: error.message,
+            errorMessage: (error as Error).message,
           },
         });
       }

@@ -86,7 +86,7 @@ const ProductionListing: React.FC = () => {
           payload: {
             errorState: true,
             loading: false,
-            errorMessage: error.message,
+            errorMessage: (error as Error).message,
           },
         });
       }
@@ -108,18 +108,35 @@ const ProductionListing: React.FC = () => {
     return <ErrorComponent message={errorMessage} />;
   }
 
+  // Type guard to filter out invalid elements and ensure that the listing array contains only ProductData objects
+  const isProductData = (item: any): item is ProductData => {
+    return (
+      typeof item === "object" &&
+      "productId" in item &&
+      "photo" in item &&
+      "productName" in item &&
+      "categoryName" in item &&
+      "brandName" in item &&
+      "cost" in item
+    );
+  };
+
+  // Filter out invalid elements from listing array
+  const productDataList = (listing as any[]).filter(
+    isProductData
+  ) as ProductData[];
+
   // Render product listing
   return (
     <div className="container mx-auto px-4 py-8">
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 ">
-        {listing &&
-          listing.map((data: ProductData) => (
-            <div key={data.productId} className="mb-4">
-              <div className="bg-white rounded-md shadow-md overflow-hidden h-full bg-gray-100">
-                <Product product={data} />
-              </div>
+        {productDataList.map((data: ProductData) => (
+          <div key={data.productId} className="mb-4">
+            <div className="bg-white rounded-md shadow-md overflow-hidden h-full bg-gray-100">
+              <Product product={data} />
             </div>
-          ))}
+          </div>
+        ))}
       </div>
     </div>
   );
