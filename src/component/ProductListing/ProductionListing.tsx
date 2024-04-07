@@ -1,9 +1,19 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect } from "react";
 import Loading from "../Loading/Loading";
 import ErrorComponent from "../Error/ErrorComponent";
 import Product from "./Product";
+import { AppStateContext } from "../GlobalStateContext/AppStateProvider";
 
-const getCookie = (name) => {
+interface ProductData {
+  productId: string;
+  photo: string;
+  productName: string;
+  categoryName: string;
+  brandName: string;
+  cost: number;
+}
+
+const getCookie = (name: string): string | null => {
   const cookies = document.cookie.split("; ");
   for (const cookie of cookies) {
     const [cookieName, cookieValue] = cookie.split("=");
@@ -14,59 +24,86 @@ const getCookie = (name) => {
   return null;
 };
 
-const ProductionListing = () => {
-  const [listing, setListing] = useState([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(false);
+const ProductionListing: React.FC = () => {
+  const {
+    state: { errorState, errorMessage, loading, valid, listing },
+    dispatch,
+  } = useContext(AppStateContext);
+
+  const url: string = import.meta.env.VITE_API_URL_PRODUCT_LISTING;
 
   useEffect(() => {
-    const fetchListing = async () => {
+    const productApi = async (): Promise<void> => {
       try {
-        setLoading(true);
         const token = getCookie("token");
         if (!token) {
           throw new Error("Token not found in cookies");
         }
 
-        const response = await fetch(
-          "https://kiosk-backend.nutritap.in/api/catalogue/get?clientId=25&cid=22",
-          {
-            headers: {
-              Authorization: `Bearer ${token}`,
-            },
-          }
-        );
+        const response = await fetch(`${url}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        });
 
         if (!response.ok) {
-          throw new Error("Failed to fetch product listing");
+          const data = await response.json();
+          throw new Error(data.errors);
         }
-
         const data = await response.json();
-        setListing(data.catalogueResponse);
-        setError(false);
+        if (data.success) {
+          dispatch({
+            type: "product/listing",
+            payload: data.catalogueResponse,
+          });
+        } else {
+          // Handle incorrect password scenario
+          dispatch({
+            type: "error",
+            payload: {
+              errorState: true,
+              loading: false,
+              errorMessage: "Something went Wrong try again later !",
+            },
+          });
+        }
       } catch (error) {
-        setError(true);
-      } finally {
-        setLoading(false);
+        dispatch({
+          type: "error",
+          payload: {
+            errorState: true,
+            loading: false,
+            errorMessage: error.message,
+          },
+        });
       }
     };
 
-    fetchListing();
-  }, []);
+    if (valid) {
+      productApi();
+    }
+  }, [valid, dispatch, url]);
 
   if (loading) {
     return <Loading />;
   }
 
-  if (error) {
-    return <ErrorComponent message={error} />;
+  if (errorState) {
+    return <ErrorComponent message={errorMessage} />;
   }
 
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-      {listing.map((data) => (
-        <Product key={data.productId} product={data} />
-      ))}
+    <div className="container mx-auto px-4 py-8">
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 ">
+        {listing &&
+          listing.map((data: ProductData) => (
+            <div key={data.productId} className="mb-4">
+              <div className="bg-white rounded-md shadow-md overflow-hidden h-full bg-gray-100">
+                <Product product={data} />
+              </div>
+            </div>
+          ))}
+      </div>
     </div>
   );
 };

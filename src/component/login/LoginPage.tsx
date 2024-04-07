@@ -1,57 +1,76 @@
-import React from "react";
-import { useAppState } from "./AppStateProvider";
-import Loading from "../Loading/Loading";
+import React, { useEffect, useContext } from "react";
+import LoginForm from "./LoginForm";
+import ProductionListing from "../ProductListing/ProductionListing";
 import ErrorComponent from "../Error/ErrorComponent";
+import Loading from "../Loading/Loading";
+import { AppStateContext } from "../GlobalStateContext/AppStateProvider";
 
-// LoginForm component
-const LoginForm = () => {
-  const { state, dispatch } = useAppState();
+const LoginPage: React.FC = () => {
+  const {
+    dispatch,
+    state: { user, loading, errorState, valid, errorMessage },
+  } = useContext(AppStateContext);
 
-  const handleLogin = () => {
-    dispatch({
-      type: "login",
-      payload: { username: state.user.username, password: state.user.password },
-    });
-    dispatch({ type: "loading", payload: true });
-  };
+  const url = import.meta.env.VITE_API_URL_LOGIN;
+
+  useEffect(() => {
+    const loginApi = async () => {
+      try {
+        const response = await fetch(`${url}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(user),
+        });
+
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.errors); 
+        }
+        const data = await response.json();
+        if (data.success) {
+          dispatch({
+            type: "success",
+          });
+          document.cookie = `token=${data.token}`;
+        } else {
+          // Handle incorrect password scenario
+          dispatch({
+            type: "error",
+            payload: {
+              errorState: true,
+              loading: false,
+              errorMessage: "Please enter correct credentails !",
+            },
+          });
+        }
+      } catch (error) {
+        dispatch({
+          type: "error",
+          payload: {
+            errorState: true,
+            loading: false,
+            errorMessage: error.message,
+          },
+        });
+      }
+    };
+
+    if (loading) {
+      loginApi();
+    }
+
+  }, [user, loading, dispatch, url]);
 
   return (
-    <div className="flex justify-center items-center h-screen">
-      <div className="bg-gray-100 p-6 rounded-lg shadow-md">
-        <input
-          className="block w-full mb-4 p-2 rounded-md border border-gray-300"
-          type="email"
-          placeholder="Username"
-          value={username}
-          onChange={(e) =>
-            dispatch({
-              type: "user",
-              payload: { username: e.target.value },
-            })
-          }
-        />
-        <input
-          className="block w-full mb-4 p-2 rounded-md border border-gray-300"
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) =>
-            dispatch({
-              type: "password",
-              payload: { password: e.target.value },
-            })
-          }
-        />
-        <button
-          className="w-full bg-blue-500 text-white font-bold py-2 rounded-md hover:bg-blue-600"
-          onClick={handleLogin}
-        >
-          Login
-        </button>
-      </div>
+    <div className="bg-pink-100">
+      {loading && !errorState ? <Loading /> : null}
+      {!loading && errorState ? (
+        <ErrorComponent message={errorMessage} />
+      ) : (
+        <>{valid ? <ProductionListing /> : <LoginForm />}</>
+      )}
     </div>
   );
 };
 
-export default LoginForm
-
+export default LoginPage;
